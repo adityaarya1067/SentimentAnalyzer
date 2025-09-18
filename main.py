@@ -4,10 +4,11 @@ import re
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
-import os # To handle file paths
+import os
+import urllib.error # Import URLError for NLTK download errors on some older versions
+
 
 # --- Configuration ---
-# Set page title and favicon
 st.set_page_config(
     page_title="Sentiment Analysis App",
     page_icon="💬",
@@ -18,13 +19,17 @@ st.set_page_config(
 st.markdown("""
     <style>
     /* Streamlit's main content wrapper for top margin */
-    .css-1d3f8gv {
-        padding-top: 2rem; /* Adjusted for simpler spacing */
+    .css-1d3f8gv { /* You might need to adjust this class name based on Streamlit updates */
+        padding-top: 2rem;
+    }
+    h1 {
+        text-align: center; /* Center the title */
+        color: #007bff; /* Matching your original color */
     }
     .stAlert {
         border-radius: 0.25rem;
         padding: 0.75rem 1.25rem;
-        margin-top: 1.5rem; /* Added margin for separation */
+        margin-top: 1.5rem;
         border: 1px solid transparent;
         font-size: 1.1em;
         font-weight: 600;
@@ -43,12 +48,12 @@ st.markdown("""
         color: #856404;
         border-color: #ffeeba;
     }
-    .stAlert.stError { /* Streamlit uses stError for 'danger' */
+    .stAlert.stError {
         background-color: #f8d7da;
         color: #721c24;
         border-color: #f5c6cb;
     }
-    .stAlert.stInfo { /* For unknown sentiment, using stInfo for secondary */
+    .stAlert.stInfo {
         background-color: #d1ecf1;
         color: #0c5460;
         border-color: #bee5eb;
@@ -56,27 +61,29 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- NLTK Downloads (Run only once) ---
-# Use st.cache_data to ensure NLTK downloads are handled efficiently
-@st.cache_data(show_spinner=False)
+
+# --- NLTK Downloads (Run only once and handle potential errors) ---
+@st.cache_data(show_spinner="Downloading NLTK data...")
 def download_nltk_data():
     try:
-        nltk.data.find('corpora/stopwords')
-    except nltk.downloader.DownloadError:
-        with st.spinner("Downloading NLTK stopwords..."):
-            nltk.download('stopwords', quiet=True)
-    return True
+        # Download stopwords if not already present
+        nltk.download('stopwords', quiet=True)
+        # You might also need 'punkt' for some tokenization tasks, though not explicitly used here
+        # nltk.download('punkt', quiet=True)
+        return True
+    except (urllib.error.URLError, Exception) as e:
+        st.error(f"Failed to download NLTK data. Please check your internet connection or try again later. Error: {e}")
+        st.stop() # Stop the app if essential NLTK data cannot be downloaded
 
+# Call the function to ensure data is downloaded/checked
 download_nltk_data()
 
+
 # --- Load Model and TF-IDF Vectorizer ---
-# Adjust path for Streamlit Cloud - assume models are in the same directory as app.py
-# Or, if they are in .venv, make sure .venv is packaged correctly or adjust paths
-# For simplicity, let's assume clf.pkl and tfidf.pkl are in the same directory as this script
 MODEL_PATH = os.path.join(os.path.dirname(__file__), 'clf.pkl')
 TFIDF_PATH = os.path.join(os.path.dirname(__file__), 'tfidf.pkl')
 
-@st.cache_resource # Cache the model loading for efficiency
+@st.cache_resource
 def load_resources():
     try:
         with open(MODEL_PATH, 'rb') as f:
@@ -101,18 +108,10 @@ porter = PorterStemmer()
 
 # --- Preprocessing Function ---
 def preprocessing(text):
-    # Remove HTML tags
     text = re.sub(r'<[^>]*>', '', text)
-
-    # Extract emojis (simplified as they are typically removed/ignored by tokenizers)
     emojis = emoticon_pattern.findall(text)
-
-    # Remove non-word characters and lowercase
     text = re.sub(r'\W+', ' ', text.lower()) + ' '.join(emojis).replace('-', '')
-
-    # Stem and remove stopwords
     processed_words = [porter.stem(word) for word in text.split() if word not in stopwords_set]
-
     return " ".join(processed_words)
 
 # --- Streamlit UI ---
@@ -130,16 +129,10 @@ if st.button("Analyze Sentiment"):
     if comment.strip() == "":
         st.warning("Please enter some text to analyze.")
     else:
-        # Preprocess the comment
         preprocessed_comment = preprocessing(comment)
-
-        # Transform the preprocessed comment into a feature vector
         comment_vector = tfidf.transform([preprocessed_comment])
-
-        # Predict the sentiment
         sentiment = clf.predict(comment_vector)[0]
 
-        # Display result
         if sentiment == 2:
             st.success("😊 Positive comment!")
         elif sentiment == 1:
