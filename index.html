@@ -1,80 +1,64 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
     <title>Sentiment Analysis</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        h1 {
+            color: #007bff;
+        }
+        .form-control {
+            background-color: #ffffff;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+        }
+    </style>
 </head>
-
-<style>
-    body {
-        background-color: #f8f9fa; /* Set your desired background color */
-    }
-
-    .container {
-        margin-top: 50px;
-    }
-
-    h1 {
-        color: #007bff; /* Set your desired heading color */
-    }
-
-    .form-control {
-        background-color: #ffffff; /* Set your desired textarea background color */
-    }
-
-    .btn-primary {
-        background-color: #007bff; /* Set your desired button background color */
-        border-color: #007bff;
-    }
-
-    .btn-primary:hover {
-        background-color: #0069d9; /* Set your desired button hover background color */
-        border-color: #0062cc;
-    }
-
-    .alert-success {
-        background-color: #d4edda; /* Set your desired success alert background color */
-        color: #155724; /* Set your desired success alert text color */
-        border-color: #c3e6cb;
-    }
-
-    .alert-danger {
-        background-color: #f8d7da; /* Set your desired danger alert background color */
-        color: #721c24; /* Set your desired danger alert text color */
-        border-color: #f5c6cb;
-    }
-
-    .alert-warning {
-        background-color: #fff3cd; /* Set your desired warning alert background color */
-        color: #856404; /* Set your desired warning alert text color */
-        border-color: #ffeeba;
-    }
-</style>
-
 <body>
     <div class="container mt-5">
         <h1 class="mb-4">Sentiment Analysis</h1>
+
+        <!-- form points to Flask backend -->
         <form method="POST" action="{{ url_for('analyze_sentiment') }}">
             <div class="form-group">
                 <label for="comment">Enter your comment:</label>
-                <textarea class="form-control" id="comment" name="comment" rows="3"></textarea>
+                <textarea class="form-control" id="comment" name="comment" rows="3" required></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Analyze</button>
         </form>
 
+        <!-- result block -->
         {% if sentiment is defined %}
             <div class="mt-4">
                 {% if sentiment == 2 %}
-                    <div class="alert alert-success" role="alert">Positive comment!</div>
+                    <div class="alert alert-success">😊 Positive comment!</div>
                 {% elif sentiment == 1 %}
-                    <div class="alert alert-warning" role="alert">Neutral comment!</div>
+                    <div class="alert alert-warning">😐 Neutral comment!</div>
+                {% elif sentiment == 0 %}
+                    <div class="alert alert-danger">☹️ Negative comment!</div>
                 {% else %}
-                    <div class="alert alert-danger" role="alert">Negative comment!</div>
+                    <div class="alert alert-secondary">⚠️ Unknown sentiment!</div>
                 {% endif %}
             </div>
         {% endif %}
     </div>
 
+    <!-- Bootstrap JS + dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>
